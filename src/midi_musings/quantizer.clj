@@ -70,6 +70,10 @@
   [scale note]
   (apply min-key (fn [scale-note] (Math/abs (- note scale-note))) scale))
 
+(defn shift
+  [melody]
+  (take (count melody) (rest (cycle melody))))
+
 (comment
 
   ;; completely random notes and gaps
@@ -83,6 +87,8 @@
          (random-sample 0.01)
          (take 8)
          (map (partial quantize (rand-nth scales)))))
+
+  (swap! melody shift)
   
   (reset! melody (sample))
 
