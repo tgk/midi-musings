@@ -2,15 +2,33 @@
   (:require [midi-musings.levenshtein :as l])
   (:import [javax.sound.midi MidiSystem ShortMessage]))
 
-(defn mother-32-device
-  []
-  (let [device-info (last (filter #(= "CH345 [hw:1,0,0]" (.getName %))
-                                  (MidiSystem/getMidiDeviceInfo)))]
+(defn get-midi-device
+  [name]
+  (when-let [device-info (last (filter #(= name (.getName %))
+                                       (MidiSystem/getMidiDeviceInfo)))]
     (MidiSystem/getMidiDevice device-info)))
 
+(defn mother-32-device
+  []
+  (when-let [device-info (last (filter #(= "CH345 [hw:1,0,0]" (.getName %))
+                                       (MidiSystem/getMidiDeviceInfo)))]
+    (MidiSystem/getMidiDevice device-info)))
+
+(comment
+
+  (seq
+   (MidiSystem/getMidiDeviceInfo))
+
+  (play-notes
+   (range 128)
+   (get-midi-device "Gervill"))
+
+  )
+
 (defn play-notes
-  [notes]
-  (with-open [d (doto (mother-32-device) .open)]
+  [notes & [midi-device]]
+  (let [midi-device (or midi-device (mother-32-device))]
+    (with-open [d (doto midi-device .open)]
       (let [receiver (.getReceiver d)]
         (doseq [note notes]
           (when note
@@ -24,7 +42,7 @@
                    (doto (ShortMessage.)
                      (.setMessage ShortMessage/NOTE_OFF note 0))
                    -1))
-          (Thread/sleep 100)))))
+          (Thread/sleep 100))))))
 
 (defn midi-offsets
   [tone-pattern]
